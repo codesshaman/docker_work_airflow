@@ -45,4 +45,10 @@ RUN pip3 install -r requirements.txt && \
     export LD_LIBRARY_PATH=/usr/lib/oracle/21/client64/lib && \
     export PATH=$PATH:/usr/lib/oracle/21/client64/bin
 
-CMD ["airflow", "standalone"]
+EXPOSE 8080
+
+# CMD ["airflow", "standalone"]
+
+CMD ["airflow", "webserver", "--port", "8080"]
+
+# ENTRYPOINT ["airflow", "sheduller"]

@@ -1,0 +1,17 @@
+version: '3'
+services:
+  airflow:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VERSION: ${VERSION}
+        PIP_ADDITIONAL_REQUIREMENTS: ${PIP_ADDITIONAL_REQUIREMENTS}       
+    restart: always
+    ports:
+      - 8080:8080
+    volumes:
+      - ./dags:/airflow/dags
+      - ./logs:/airflow/logs
+      - ./plugins:/airflow/plugins
+   #   - ./airflow/standalone_admin_password.txt:/airflow/standalone_admin_password.txt

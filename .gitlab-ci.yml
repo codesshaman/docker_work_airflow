@@ -1,0 +1,20 @@
+stages:
+  - build
+ # - test
+ # - deploy test
+ # - deploy production
+
+build:
+  stage: build
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker build --no-cache -t ${CI_REGISTRY_IMAGE}:latest -t ${CI_REGISTRY_IMAGE}:$CI_COMMIT_SHA .
+    - docker push ${CI_REGISTRY_IMAGE}:$CI_COMMIT_SHA > /dev/null
+    - docker push ${CI_REGISTRY_IMAGE}:latest > /dev/null
+  tags:
+    - airflow, dp
+ # rules:
+ #   - if: $CI_COMMIT_TAG =~ /^devops/
+ #     when: never
+

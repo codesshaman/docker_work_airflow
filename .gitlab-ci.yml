@@ -31,20 +31,20 @@ test:
   <<: *ssh_setup
   stage: test
   before_script:
-    - ssh -vvv $VM_CLICKHOUSE_USER@$VM_CLICKHOUSE_PORT "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
+    - ssh $VM_CLICKHOUSE_USER@$VM_CLICKHOUSE_PORT "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
     # - ssh -vvv $VM_CLICKHOUSE_USER@$VM_CLICKHOUSE_PORT "echo $REGISTRY_TOKEN | docker login -u $CI_REGISTRY_USER $CI_REGISTRY"
   script:
-    - ssh -vvv $VM_CLICKHOUSE_USER@$VM_CLICKHOUSE_PORT "docker pull ${CI_REGISTRY_IMAGE}:$CI_COMMIT_SHA"
-    # - ssh -o StrictHostKeyChecking=no $VM_CLICKHOUSE_USER@$VM_CLICKHOUSE_PORT "docker stop airflow_container"
-    # - ssh -o StrictHostKeyChecking=no $VM_CLICKHOUSE_USER@$VM_CLICKHOUSE_PORT "docker rm airflow_container"
-    # - ssh -o StrictHostKeyChecking=no $VM_CLICKHOUSE_USER@$VM_CLICKHOUSE_PORT "docker run -d --name airflow_container -p 8080:8080 ${CI_REGISTRY_IMAGE}:$CI_COMMIT_SHA"
+    - ssh $VM_CLICKHOUSE_USER@$VM_CLICKHOUSE_PORT "docker pull ${CI_REGISTRY_IMAGE}:$CI_COMMIT_SHA"
+    - ssh $VM_CLICKHOUSE_USER@$VM_CLICKHOUSE_PORT "docker stop airflow_container"
+    - ssh $VM_CLICKHOUSE_USER@$VM_CLICKHOUSE_PORT "docker rm airflow_container"
+    - ssh $VM_CLICKHOUSE_USER@$VM_CLICKHOUSE_PORT "docker run -d --name airflow_container -p 8080:8080 ${CI_REGISTRY_IMAGE}:$CI_COMMIT_SHA"
     - echo "Hello from server!"
   only:
     - test
   dependencies:
     - build
   tags:
-    - vm-lin-clickhouse
+    - airflow, dp
 
 
 # deploy test:

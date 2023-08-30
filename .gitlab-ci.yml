@@ -1,20 +1,73 @@
 stages:
+  - ssh
   - build
- # - test
- # - deploy test
- # - deploy production
+  - test
+  # - deploy test
+  # - deploy production
+
+.ssh-setyings-up: &ssh_setup
+  stage: ssh
+  before_script:
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+    - chmod 700 ~/.ssh/id_rsa
+    - eval "$(ssh-agent -s)"
+    - ssh-add ~/.ssh/id_rsa
+    - ssh-keyscan -t rsa $VM_CLICKHOUSE_PORT > ~/.ssh/known_hosts
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+    - chmod 644 ~/.ssh/known_hosts
 
 build:
   stage: build
-  before_script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
     - docker build --no-cache -t ${CI_REGISTRY_IMAGE}:latest -t ${CI_REGISTRY_IMAGE}:$CI_COMMIT_SHA .
     - docker push ${CI_REGISTRY_IMAGE}:$CI_COMMIT_SHA > /dev/null
     - docker push ${CI_REGISTRY_IMAGE}:latest > /dev/null
   tags:
     - airflow, dp
- # rules:
- #   - if: $CI_COMMIT_TAG =~ /^devops/
- #     when: never
 
+test:
+  <<: *ssh_setup
+  stage: test
+  before_script:
+    - ssh -vvv $VM_CLICKHOUSE_USER@$VM_CLICKHOUSE_PORT "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
+    # - ssh -vvv $VM_CLICKHOUSE_USER@$VM_CLICKHOUSE_PORT "echo $REGISTRY_TOKEN | docker login -u $CI_REGISTRY_USER $CI_REGISTRY"
+  script:
+    - ssh -vvv $VM_CLICKHOUSE_USER@$VM_CLICKHOUSE_PORT "docker pull ${CI_REGISTRY_IMAGE}:$CI_COMMIT_SHA"
+    # - ssh -o StrictHostKeyChecking=no $VM_CLICKHOUSE_USER@$VM_CLICKHOUSE_PORT "docker stop airflow_container"
+    # - ssh -o StrictHostKeyChecking=no $VM_CLICKHOUSE_USER@$VM_CLICKHOUSE_PORT "docker rm airflow_container"
+    # - ssh -o StrictHostKeyChecking=no $VM_CLICKHOUSE_USER@$VM_CLICKHOUSE_PORT "docker run -d --name airflow_container -p 8080:8080 ${CI_REGISTRY_IMAGE}:$CI_COMMIT_SHA"
+    - echo "Hello from server!"
+  only:
+    - test
+  dependencies:
+    - build
+  tags:
+    - vm-lin-clickhouse
+
+
+# deploy test:
+#   stage: deploy test
+#   script:
+#     - ssh $VM_CLICKHOUSE "docker stop airflow_container"
+#     - ssh $VM_CLICKHOUSE "docker rm airflow_container"
+#     - ssh $VM_CLICKHOUSE "docker run -d --name airflow_container -p 8080:8080 ${CI_REGISTRY_IMAGE}:$CI_COMMIT_SHA"
+#   only:
+#     - tags
+#   dependencies:
+#     - test
+
+# deploy production:
+#   stage: deploy production
+#   script:
+#     - ssh $VM_CLICKHOUSE "docker stop airflow_container"
+#     - ssh $VM_CLICKHOUSE "docker rm airflow_container"
+#     - ssh $VM_CLICKHOUSE "docker run -d --name airflow_container -p 8080:8080 ${CI_REGISTRY_IMAGE}:$CI_COMMIT_SHA"
+#   only:
+#     - /^devops/
+#   dependencies:
+#     - test
+#  # rules:
+#  #   - if: $CI_COMMIT_TAG =~ /^devops/
+#  #     when: never

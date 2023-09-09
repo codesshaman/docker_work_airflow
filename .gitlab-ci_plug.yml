@@ -11,10 +11,10 @@ build:
   #   - cd ~ $$ rm -rf ./buijlds # fatal: git fetch-pack: expected shallow list
   script:
     - echo "Собираем новый образ"
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker build --no-cache -t ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA} .
+    # - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    # - docker build --no-cache -t ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA} .
     - echo "Пушим образ в репозиторий"
-    - docker push ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA} > /dev/null
+    # - docker push ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA} > /dev/null
     # Если понадобится авторизация при пуше:
     #- docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY && docker push ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA} > /dev/null
   rules:
@@ -34,11 +34,11 @@ start:
     - |-
       sudo su - $VM_CLICKHOUSE_USER -c "
         export SELFMADE_AIRFLOW_IMAGE=${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}"
-        cd /home/$VM_CLICKHOUSE_USER/airflow
-        docker-compose down && docker-compose up -d && docker-compose ps
-        echo y | docker system prune -a
-        docker images
-      "
+    #     cd /home/$VM_CLICKHOUSE_USER/airflow
+    #     docker-compose down && docker-compose up -d && docker-compose ps
+    #     echo y | docker system prune -a
+    #     docker images
+    #   "
     - echo "Пайплайн выполнен успешно!"
   rules:
     - exists:

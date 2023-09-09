@@ -1,48 +1,73 @@
 name = airflow
 
-NO_COLOR=\033[0m		# Color Reset
-COLOR_OFF='\e[0m'       # Color Off
-OK_COLOR=\033[32;01m	# Green Ok
-ERROR_COLOR=\033[31;01m	# Error red
-WARN_COLOR=\033[33;01m	# Warning yellow
-RED='\e[1;31m'          # Red
-GREEN='\e[1;32m'        # Green
-YELLOW='\e[1;33m'       # Yellow
-BLUE='\e[1;34m'         # Blue
-PURPLE='\e[1;35m'       # Purple
-CYAN='\e[1;36m'         # Cyan
-WHITE='\e[1;37m'        # White
-UCYAN='\e[4;36m'        # Cyan
+VAR :=				# Cmd arg var
+NO_COLOR=\033[0m	# Color Reset
+OK=\033[32;01m		# Green Ok
+ERROR=\033[31;01m	# Error red
+WARN=\033[33;01m	# Warning yellow
 
 all:
 	@printf "Запуск конфигурации ${name}...\n"
-	@docker-compose -f ./docker-compose.yaml up -d
+	@docker-compose -f ./docker-compose.yml up -d
 
 build:
 	@printf "Сборка конфигурации ${name}...\n"
-	@docker-compose -f ./docker-compose.yaml up -d --build
+	@docker-compose -f ./docker-compose.yml up -d --build
 
 help:
-	@echo -e "$(OK_COLOR)==== All commands of ${name} configuration ====$(NO_COLOR)"
-	@echo -e "$(WARN_COLOR)- make				: Запуск конфигурации"
-	@echo -e "$(WARN_COLOR)- make build			: Сборка конфигурации"
-	@echo -e "$(WARN_COLOR)- make down			: Остановка конфигурации"
-	@echo -e "$(WARN_COLOR)- make ps			: Обзор конфигурации"
-	@echo -e "$(WARN_COLOR)- make re			: Перезапуск конфигурации"
-	@echo -e "$(WARN_COLOR)- make clean			: Очистка конфигурации"
-	@echo -e "$(WARN_COLOR)- make fclean			: Очистка кеша docker$(NO_COLOR)"
+	@echo -e "$(OK)==== Все команды для конфигурации ${name} ===="
+	@echo -e "$(WARN)- make				: Запуск конфигурации"
+	@echo -e "$(WARN)- make build			: Сборка конфигурации"
+	@echo -e "$(WARN)- make down			: Остановка конфигурации"
+	@echo -e "$(WARN)- make downws			: Остановка airflow-webserver"
+	@echo -e "$(WARN)- make init			: Инициализация конфигурации"
+	@echo -e "$(WARN)- make ps			: Обзор запущенной конфигурации"
+	@echo -e "$(WARN)- make push			: Пуш с билдом для запуска ci/cd"
+	@echo -e "$(WARN)- make re			: Перезапуск конфигурации"
+	@echo -e "$(WARN)- make scan			: Поиск изменений переменных"
+	@echo -e "$(WARN)- make show			: Логирование изменений"
+	@echo -e "$(WARN)- make up			: Первый запуск конфигурации"
+	@echo -e "$(WARN)- make clean			: Очистка конфигурации"
+	@echo -e "$(WARN)- make fclean			: Очистка кеша docker"
+	@echo -e "$(OK)==== ВНИМАНИЕ! ВАЖНО ===="
+	@echo -e "$(WARN)- При первом запуске конфигурации используем"
+	@echo -e "$(WARN)- сначала команду make init, затем make up!$(NO_COLOR)"
 
 down:
 	@printf "Остановка конфигурации ${name}...\n"
-	@docker-compose -f ./docker-compose.yaml down
+	@docker-compose -f ./docker-compose.yml down
+
+downws:
+	@printf "Остановка airflow-webserver...\n"
+	@docker-compose -f ./docker-compose.yml stop airflow-webserver
+
+init:
+	@printf "Инициализации конфигурации ${name}...\n"
+	@bash ./scripts/init.sh
+	@docker compose up airflow-init
 
 ps:
-	@docker-compose -f ./docker-compose.yaml ps
+	@docker-compose -f ./docker-compose.yml ps
+
+push:
+	@bash ./scripts/push.sh
 
 re:
 	@printf "Пересборка конфигурации ${name}...\n"
-	@docker-compose -f ./docker-compose.yaml down
-	@docker-compose -f ./docker-compose.yaml up -d --build
+	@docker-compose -f ./docker-compose.yml down
+	@docker-compose -f ./docker-compose.yml up -d --build
+
+scan:
+	@printf "$(WARN_COLOR)==== Проверяю изменения в переменных ${name}... ====$(NO_COLOR)\n"
+	@bash ./scripts/changes.sh
+
+show:
+	@printf "$(WARN_COLOR)==== Заношу изменения в файл ${name}... ====$(NO_COLOR)\n"
+	@bash ./scripts/all_vars.sh > .variables
+
+up:
+	@printf "Первый запуск конфигурации ${name}...\n"
+	@docker compose up -d
 
 clean: down
 	@printf "Очистка конфигурации ${name}...\n"
@@ -55,4 +80,4 @@ fclean:
 #	@docker network prune --force
 #	@docker volume prune --force
 
-.PHONY	: all build down ps re clean fclean
+.PHONY	: all build down ps re scan show clean fclean

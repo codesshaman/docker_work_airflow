@@ -1,0 +1,8 @@
+version: '3'
+services:
+  airflow-cli:
+    image: ${SELFMADE_AIRFLOW_IMAGE}
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./plugins:/opt/airflow/plugins
+    command: bash -c "airflow"

@@ -10,15 +10,25 @@ x-airflow-common:
   # build: .
   environment:
     &airflow-common-env
+    AUTH_TYPE: AUTH_LDAP
+    AIRFLOW_VERSION: 2.2.1
+    AUTH_LDAP_USE_TLS: 'False'
+    AUTH_LDAP_UID_FIELD: uid
+    AUTH_LDAP_SEARCH_SCOPE: LEVEL
+    AUTH_LDAP_SEARCH: dc=hcaskona,dc=com
+    AUTH_LDAP_BIND_PASSWORD: XgabA6yBW4jP
+    AUTH_LDAP_SERVER: ldaps://vm-adds-05.hcaskona.com:636
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+    AUTH_LDAP_BIND_USER: cn=airflow-datapl-ldap,OU=Services,OU=Accounts,DC=hcaskona,DC=com
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AUTH_LDAP_GROUP_SEARCH_FILTER: memberOf=CN=airflow-datapl-ldap,OU=Services,OU=Accounts,DC=hcaskona,DC=com
     # For backward compatibility, with Airflow <2.3
     AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
     AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
-    AIRFLOW__CORE__LOAD_EXAMPLES: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
     # yamllint disable rule:line-length
     # Use simple http server on scheduler for health checks
@@ -29,11 +39,12 @@ x-airflow-common:
     # for other purpose (development, test and especially production usage) build/extend Airflow image.
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
   volumes:
-    - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
-    - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
-    - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
-    - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
-    - ./airflow.cfg:/opt/airflow/airflow.cfg:z
+    - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags:z
+    - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs:z
+    - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config:z
+    - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins:z
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow.cfg:/opt/airflow/airflow.cfg:z
+    - ${AIRFLOW_PROJ_DIR:-.}/webserver_config.py:/opt/airflow/webserver_config.py:z
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -152,15 +163,15 @@ services:
         }
         airflow_version=$$(AIRFLOW__LOGGING__LOGGING_LEVEL=INFO && gosu airflow airflow version)
         airflow_version_comparable=$$(ver $${airflow_version})
-        min_airflow_version=2.2.0
-        min_airflow_version_comparable=$$(ver $${min_airflow_version})
-        if (( airflow_version_comparable < min_airflow_version_comparable )); then
-          echo
-          echo -e "\033[1;31mERROR!!!: Too old Airflow version $${airflow_version}!\e[0m"
-          echo "The minimum Airflow version supported: $${min_airflow_version}. Only use this or higher!"
-          echo
-          exit 1
-        fi
+        # min_airflow_version=2.2.0
+        # min_airflow_version_comparable=$$(ver $${min_airflow_version})
+        # if (( airflow_version_comparable < min_airflow_version_comparable )); then
+        #   echo
+        #   echo -e "\033[1;31mERROR!!!: Too old Airflow version $${airflow_version}!\e[0m"
+        #   echo "The minimum Airflow version supported: $${min_airflow_version}. Only use this or higher!"
+        #   echo
+        #   exit 1
+        # fi
         if [[ -z "${AIRFLOW_UID}" ]]; then
           echo
           echo -e "\033[1;33mWARNING!!!: AIRFLOW_UID not set!\e[0m"
@@ -209,12 +220,12 @@ services:
     # yamllint enable rule:line-length
     environment:
       <<: *airflow-common-env
-      _AIRFLOW_DB_MIGRATE: 'true'
-      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_DB_MIGRATE: 'false'
+      _AIRFLOW_WWW_USER_CREATE: 'false'
       _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
       _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
-      _PIP_ADDITIONAL_REQUIREMENTS: ''
-    user: "0:0"
+      _PIP_ADDITIONAL_REQUIREMENTS: ${PIP_ADDITIONAL_REQUIREMENTS}
+    user: "${AIRFLOW_UID:-50000}:0"
     volumes:
       - ${AIRFLOW_PROJ_DIR:-.}:/sources
 

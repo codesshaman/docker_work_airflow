@@ -5,4 +5,8 @@ services:
     volumes:
       - ./dags:/opt/airflow/dags
       - ./plugins:/opt/airflow/plugins
-    command: bash -c "airflow"
+    command:
+      - bash
+      - -c
+      - airflow dags trigger load_variables_dag -r varsrescan
+

@@ -8,27 +8,26 @@ LABEL org.opencontainers.image.description="Image Apache Airflow for hosting on 
       org.opencontainers.image.licenses="Apache-2.0" 
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    nano \
     wget \
+    unzip \
     alien \
     libaio1 \
     libgeos-c1v5 \
-    libgeos-dev wget  && \
-    apt-get autoremove -yqq --purge && apt-get clean && rm -rf /var/lib/apt/lists/* && \
-    wget https://download.oracle.com/otn_software/linux/instantclient/213000/oracle-instantclient-basiclite-21.3.0.0.0-1.el8.x86_64.rpm && \
-    alien -i oracle-instantclient-basiclite-21.3.0.0.0-1.el8.x86_64.rpm && \
-    rm -f oracle-instantclient-basiclite-21.3.0.0.0-1.el8.x86_64.rpm && \
-    pip3 install --upgrade pip \
-    pip install --upgrade pip
+    libgeos-dev wget && \
+    apt-get autoremove -yqq --purge && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 USER airflow
-RUN pip install airflow-providers-clickhouse apache-airflow-providers-ftp \
-    apache-airflow-providers-jdbc apache-airflow-providers-jira \
-    apache-airflow-providers-microsoft-mssql \
-    apache-airflow-providers-neo4j apache-airflow-providers-odbc \
+RUN pip install --upgrade pip && \
+    pip install airflow-providers-clickhouse apache-airflow-providers-ftp \
     apache-airflow-providers-oracle apache-airflow-providers-postgres \
+    apache-airflow-providers-jdbc apache-airflow-providers-jira \
+    apache-airflow-providers-neo4j apache-airflow-providers-odbc \
     apache-airflow-providers-redis apache-airflow-providers-samba \
-    apache-airflow-providers-sftp\
-    apache-airflow-providers-ssh \
-    apache-airflow-providers-telegram
+    apache-airflow-providers-microsoft-mssql \
+    apache-airflow-providers-telegram \
+    apache-airflow-providers-sftp \
+    apache-airflow-providers-ssh
 COPY requirements.txt .
 RUN pip3 install -r requirements.txt && \
     export ORACLE_HOME=/usr/lib/oracle/21/client64 && \
